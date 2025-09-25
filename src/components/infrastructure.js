@@ -1,32 +1,29 @@
-import React, { useEffect, useState } from 'react';
-import '../styles/style.css';
-
+import React, { useState } from 'react';
 import axios from 'axios';
-
-const apiBaseUrl = process.env.REACT_APP_API_BASE_URL;
-
-axios.get(`${apiBaseUrl}/some-endpoint`)
-  .then(response => {
-    console.log(response.data);
-  });
-
+import '../styles/style.css';
 
 const Infrastructure = () => {
   const [city, setCity] = useState('');
   const [type, setType] = useState('warehouse');
   const [ownership, setOwnership] = useState('any');
   const [results, setResults] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSearch = () => {
-    // Placeholder: Replace with actual API call and update results
-    setResults([
-      {
-        id: 1,
-        name: `${type} in ${city || 'any city'}`,
-        ownership,
-        description: `Sample description for ${type} owned by ${ownership}.`,
-      },
-    ]);
+  const handleSearch = async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const response = await axios.get('/api/infrastructure', {
+        params: { city, type, ownership },
+      });
+      setResults(response.data);
+    } catch (err) {
+      setError('Failed to load infrastructure data.');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -71,7 +68,8 @@ const Infrastructure = () => {
       </div>
 
       <div id="infraResults" className="cards grid-list">
-        {results.length > 0 ? (
+        {error && <p style={{ color:'red' }}>{error}</p>}
+        {loading ? <p>Loading...</p> : (results.length > 0 ? (
           results.map(({ id, name, ownership, description }) => (
             <div key={id} className="card">
               <h3>{name}</h3>
@@ -81,7 +79,7 @@ const Infrastructure = () => {
           ))
         ) : (
           <p>No results to display.</p>
-        )}
+        ))}
       </div>
     </section>
   );

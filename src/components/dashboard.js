@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
 import '../styles/style.css';
 import EditPage from './Edit';
 
@@ -13,15 +14,81 @@ const CompanyDashboard = () => {
   const [inventory, setInventory] = useState([]);
   const [fleet, setFleet] = useState([]);
   const [storage, setStorage] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  // Helper function to load data based on active tab
+  const loadData = async (tab) => {
+    setLoading(true);
+    setError('');
+    try {
+      let response;
+      if (tab === 'inventory') {
+        response = await axios.get('/api/inventory');
+        setInventory(response.data);
+      } else if (tab === 'fleet') {
+        response = await axios.get('/api/vehicle'); // Adjust route name as needed
+        setFleet(response.data);
+      } else if (tab === 'storage') {
+        response = await axios.get('/api/warehouse'); // Adjust route name as needed
+        setStorage(response.data);
+      }
+    } catch (err) {
+      setError(`Failed to load ${tab} data`);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load data every time active tab changes
+  useEffect(() => {
+    loadData(activeTab);
+  }, [activeTab]);
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
   };
 
-  const handleSave = (data) => {
-    if (activeTab === 'inventory') setInventory([...inventory, data]);
-    else if (activeTab === 'fleet') setFleet([...fleet, data]);
-    else if (activeTab === 'storage') setStorage([...storage, data]);
+  // Save handler updated to call backend APIs accordingly
+  const handleSave = async (data) => {
+    try {
+      if (activeTab === 'inventory') {
+        if (data.itemId) {
+          // Update existing item
+          await axios.put(`/api/inventory/${data.itemId}`, data);
+          setInventory((prev) =>
+            prev.map((item) => (item.itemId === data.itemId ? data : item))
+          );
+        } else {
+          // Add new item
+          const response = await axios.post('/api/inventory', data);
+          setInventory((prev) => [...prev, response.data]);
+        }
+      } else if (activeTab === 'fleet') {
+        if (data.vehicleId) {
+          await axios.put(`/api/vehicle/${data.vehicleId}`, data);
+          setFleet((prev) =>
+            prev.map((item) => (item.vehicleId === data.vehicleId ? data : item))
+          );
+        } else {
+          const response = await axios.post('/api/vehicle', data);
+          setFleet((prev) => [...prev, response.data]);
+        }
+      } else if (activeTab === 'storage') {
+        if (data.warehouseId) {
+          await axios.put(`/api/warehouse/${data.warehouseId}`, data);
+          setStorage((prev) =>
+            prev.map((item) => (item.warehouseId === data.warehouseId ? data : item))
+          );
+        } else {
+          const response = await axios.post('/api/warehouse', data);
+          setStorage((prev) => [...prev, response.data]);
+        }
+      }
+      setIsEditOpen(false);
+    } catch (err) {
+      setError('Failed to save data.');
+    }
   };
 
   const handleEdit = (item, index) => {
@@ -83,9 +150,13 @@ const CompanyDashboard = () => {
         </button>
       </div>
 
+      {/* Loading and Error messages */}
+      {loading && <p>Loading...</p>}
+      {error && <p style={{ color: 'red' }}>{error}</p>}
+
       {/* Tables */}
-      {activeTab === 'inventory' && renderTable(inventory, ['Item', 'Qty', 'Location'])}
-      {activeTab === 'fleet' && renderTable(fleet, ['Type', 'ID', 'Status'])}
+      {activeTab === 'inventory' && renderTable(inventory, ['Item', 'Description', 'Quantity'])}
+      {activeTab === 'fleet' && renderTable(fleet, ['Type', 'Id', 'Status'])}
       {activeTab === 'storage' && renderTable(storage, ['Facility', 'Capacity', 'Used'])}
 
       {/* Edit Modal */}
@@ -94,6 +165,7 @@ const CompanyDashboard = () => {
         onClose={() => setIsEditOpen(false)}
         onSave={handleSave}
         editData={editData}
+        resourceType={activeTab}
       />
     </section>
   );

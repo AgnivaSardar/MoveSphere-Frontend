@@ -22,6 +22,8 @@ const SignUp = () => {
 
   const isStrongPassword = Object.values(criteria).every(Boolean);
 
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
+
   const handleSignup = async (e) => {
     e.preventDefault();
     setError('');
@@ -37,7 +39,8 @@ const SignUp = () => {
 
     setLoading(true);
     try {
-      await axios.post('/api/auth/send-otp', { email, phone });
+      // Notice no /api prefix here because API_BASE_URL excludes it
+      await axios.post(`${API_BASE_URL}/api/auth/send-otp`, { email, phone });
       setStep(2);
     } catch {
       setError('Failed to send OTP');
@@ -51,7 +54,7 @@ const SignUp = () => {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post('/api/auth/verify-otp', {
+      const res = await axios.post(`${API_BASE_URL}/api/auth/verify-otp`, {
         email,
         phone,
         otp,
@@ -84,11 +87,41 @@ const SignUp = () => {
           <h2>Sign Up</h2>
           {error && <p style={{ color: 'red' }}>{error}</p>}
           <form onSubmit={handleSignup} noValidate>
-            <input type="text" placeholder="Full Name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
-            <input type="email" placeholder="Email" required value={email} onChange={(e) => setEmail(e.target.value)} />
-            <input type="tel" placeholder="Phone Number" required value={phone} onChange={(e) => setPhone(e.target.value)} />
-            <input type="password" placeholder="Password" required value={password} onChange={(e) => setPassword(e.target.value)} />
-            <input type="password" placeholder="Confirm Password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+            <input
+              type="text"
+              placeholder="Full Name"
+              required
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+            />
+            <input
+              type="email"
+              placeholder="Email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <input
+              type="tel"
+              placeholder="Phone Number"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+            />
+            <input
+              type="password"
+              placeholder="Password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <input
+              type="password"
+              placeholder="Confirm Password"
+              required
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+            />
             <div className="password-criteria">
               <p>Password must contain:</p>
               <ul>
@@ -108,7 +141,13 @@ const SignUp = () => {
           <h2>Verify OTP</h2>
           {error && <p style={{ color: 'red' }}>{error}</p>}
           <form onSubmit={handleOtpVerify} noValidate>
-            <input type="text" placeholder="Enter OTP" required value={otp} onChange={(e) => setOtp(e.target.value)} />
+            <input
+              type="text"
+              placeholder="Enter OTP"
+              required
+              value={otp}
+              onChange={(e) => setOtp(e.target.value)}
+            />
             <button className="btn btn-primary" type="submit" disabled={loading}>
               {loading ? 'Verifying...' : 'Verify OTP'}
             </button>

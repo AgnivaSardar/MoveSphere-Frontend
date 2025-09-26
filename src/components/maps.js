@@ -3,39 +3,50 @@ import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import axios from 'axios';
 import '../styles/style.css';
 
-const GPSMaps = () => {
+const Maps = () => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
   const [mapCenter, setMapCenter] = useState({ lat: 20.5937, lng: 78.9629 }); // India center
   const [zoom, setZoom] = useState(5);
   const [activeMarker, setActiveMarker] = useState(null);
 
-  // Load all locations initially
+  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
+
   useEffect(() => {
-    fetchLocations('');
+    fetchLocations(''); // Load all locations initially
   }, []);
 
   const fetchLocations = async (search) => {
     try {
-      const response = await axios.get('/api/warehouses', { params: { q: search } });
-      setResults(response.data);
-      if (response.data.length > 0) {
-        setMapCenter(response.data[0].position);
+      const response = await axios.get(`${API_BASE_URL}/api/maps`, {
+        params: { q: search || '' },
+      });
+
+      const data = response.data || [];
+      setResults(data);
+
+      if (data.length > 0 && data[0].position) {
+        setMapCenter(data[0].position);
         setZoom(12);
-        setActiveMarker(response.data[0].id);
+        setActiveMarker(data[0].id);
         setTimeout(() => setActiveMarker(null), 3000);
+      } else {
+        // No data: fallback center, no details
+        setMapCenter({ lat: 20.5937, lng: 78.9629 });
+        setZoom(5);
       }
     } catch (error) {
-      console.error('Failed to load warehouse locations', error);
+      console.error('Failed to load map locations', error.response || error.message);
       setResults([]);
+      setMapCenter({ lat: 20.5937, lng: 78.9629 });
+      setZoom(5);
     }
   };
 
-  const handleSearch = () => {
-    fetchLocations(query);
-  };
+  const handleSearch = () => fetchLocations(query);
 
   const handleResultClick = (item) => {
+    if (!item.position) return;
     setMapCenter(item.position);
     setZoom(12);
     setActiveMarker(item.id);
@@ -45,20 +56,16 @@ const GPSMaps = () => {
   return (
     <section className="section">
       <h2>GPS & Maps</h2>
-      <p className="muted">
-        Use live maps to find nearest offices, warehouses, ports, or depots.
-      </p>
+      <p className="muted">Use live maps to find nearest harbours, hangars, or warehouses.</p>
 
       <div className="filters">
         <input
           id="mapsQuery"
-          placeholder="Search e.g., warehouse Mumbai"
+          placeholder="Search by name or type"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
         />
-        <button className="btn btn-primary" id="searchMaps" onClick={handleSearch}>
-          Search
-        </button>
+        <button className="btn btn-primary" onClick={handleSearch}>Search</button>
       </div>
 
       <div className="map-layout">
@@ -78,12 +85,12 @@ const GPSMaps = () => {
                     borderRadius: '6px',
                   }}
                 >
-                  {item.name}
+                  <strong>{item.name}</strong> ({item.type})
                 </li>
               ))}
             </ul>
           ) : (
-            <p>No search results yet.</p>
+            <p>No results found.</p>
           )}
         </div>
 
@@ -94,19 +101,27 @@ const GPSMaps = () => {
               center={mapCenter}
               zoom={zoom}
             >
-              {results.map((loc) => (
-                <Marker
-                  key={loc.id}
-                  position={loc.position}
-                  title={loc.name}
-                  icon={{
-                    url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
-                  }}
-                  animation={
-                    activeMarker === loc.id ? window.google.maps.Animation.BOUNCE : null
-                  }
-                />
-              ))}
+              {results.length > 0 &&
+                results.map((loc) =>
+                  loc.position ? (
+                    <Marker
+                      key={loc.id}
+                      position={loc.position}
+                      title={`${loc.name} (${loc.type})`}
+                      icon={{
+                        url:
+                          loc.type === 'port'
+                            ? 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
+                            : loc.type === 'hangar'
+                            ? 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
+                            : 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
+                      }}
+                      animation={
+                        activeMarker === loc.id ? window.google.maps.Animation.BOUNCE : null
+                      }
+                    />
+                  ) : null
+                )}
             </GoogleMap>
           </LoadScript>
         </div>
@@ -115,4 +130,4 @@ const GPSMaps = () => {
   );
 };
 
-export default GPSMaps;
+export default Maps;

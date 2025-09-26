@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import '../styles/style.css';
+import '../styles/style.css'; // Make sure you add overlay CSS here
 
 const EditPage = ({ isOpen, onClose, onSave, editData, resourceType }) => {
   const [id, setId] = useState(editData?.id || '');
@@ -10,8 +10,6 @@ const EditPage = ({ isOpen, onClose, onSave, editData, resourceType }) => {
   const [price, setPrice] = useState(editData?.price || '');
   const [quantity, setQuantity] = useState(editData?.quantity || '');
   const [description, setDescription] = useState(editData?.description || '');
-
-  // Legal support specific states
   const [city, setCity] = useState(editData?.city || '');
   const [caseType, setCaseType] = useState(editData?.caseType || 'contract');
   const [courtName, setCourtName] = useState(editData?.courtName || '');
@@ -43,38 +41,13 @@ const EditPage = ({ isOpen, onClose, onSave, editData, resourceType }) => {
     let data = { id, name };
 
     if (resourceType === 'inventory') {
-      data = {
-        itemId: id,
-        description,
-        quantity: Number(quantity),
-        reorderThreshold: 10, // optional to add input
-      };
+      data = { itemId: id, description, quantity: Number(quantity), reorderThreshold: 10 };
     } else if (resourceType === 'fleet') {
-      data = {
-        vehicleId: id,
-        type,
-        status: name, // map accordingly
-      };
+      data = { vehicleId: id, type, status: name };
     } else if (resourceType === 'storage') {
-      data = {
-        warehouseId: id,
-        name,
-        type,
-        location,
-        capacity: Number(capacity),
-        price: Number(price),
-      };
+      data = { warehouseId: id, name, type, location, capacity: Number(capacity), price: Number(price) };
     } else if (resourceType === 'legalSupport') {
-      data = {
-        id,
-        city,
-        caseType,
-        courtName,
-        lawyerName,
-        lawyerContact,
-        applicableActs,
-        description,
-      };
+      data = { id, city, caseType, courtName, lawyerName, lawyerContact, applicableActs, description };
     }
 
     onSave(data);
@@ -86,8 +59,6 @@ const EditPage = ({ isOpen, onClose, onSave, editData, resourceType }) => {
       <div className="edit-modal">
         <h2>{editData ? 'Edit Entry' : 'Add New Entry'}</h2>
         <form onSubmit={handleSubmit}>
-          {/* Render inputs conditionally based on resourceType */}
-
           {(resourceType === 'storage' || resourceType === 'fleet') && (
             <>
               <label>Name</label>
@@ -157,7 +128,7 @@ const EditPage = ({ isOpen, onClose, onSave, editData, resourceType }) => {
 
           <div className="edit-modal-buttons">
             <button type="submit" className="btn btn-primary">Save</button>
-            <button type="button" className="btn" onClick={onClose}>Cancel</button>
+            <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
           </div>
         </form>
       </div>

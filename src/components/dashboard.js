@@ -5,10 +5,11 @@ import EditPage from './Edit';
 
 const CompanyDashboard = () => {
   const [activeTab, setActiveTab] = useState('inventory');
+  const [searchQuery, setSearchQuery] = useState(''); // Search state
 
-  // State for modal
+  // Modal state
   const [isEditOpen, setIsEditOpen] = useState(false);
-  const [editData, setEditData] = useState(null); // null for add, object for edit
+  const [editData, setEditData] = useState(null);
 
   // Data states
   const [inventory, setInventory] = useState([]);
@@ -17,7 +18,7 @@ const CompanyDashboard = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  // Helper function to load data based on active tab
+  // Load data by tab
   const loadData = async (tab) => {
     setLoading(true);
     setError('');
@@ -27,10 +28,10 @@ const CompanyDashboard = () => {
         response = await axios.get('/api/inventory');
         setInventory(response.data);
       } else if (tab === 'fleet') {
-        response = await axios.get('/api/vehicle'); // Adjust route name as needed
+        response = await axios.get('/api/vehicles');
         setFleet(response.data);
       } else if (tab === 'storage') {
-        response = await axios.get('/api/warehouse'); // Adjust route name as needed
+        response = await axios.get('/api/warehouses');
         setStorage(response.data);
       }
     } catch (err) {
@@ -40,53 +41,56 @@ const CompanyDashboard = () => {
     }
   };
 
-  // Load data every time active tab changes
   useEffect(() => {
     loadData(activeTab);
+    setSearchQuery(''); // reset search on tab change
   }, [activeTab]);
 
   const handleTabClick = (tab) => {
     setActiveTab(tab);
   };
 
-  // Save handler updated to call backend APIs accordingly
+  // Generate next auto-increment ID
+  const getNextId = (data, key) => {
+    if (!data || data.length === 0) return '1';
+    const ids = data.map(item => parseInt(item[key]) || 0);
+    return String(Math.max(...ids) + 1);
+  };
+
+  // Save handler for create/update
   const handleSave = async (data) => {
     try {
       if (activeTab === 'inventory') {
-        if (data.itemId) {
-          // Update existing item
+        if (!data.itemId) data.itemId = getNextId(inventory, 'itemId'); // auto-increment
+        if (data.itemId && inventory.some(i => i.itemId === data.itemId)) {
           await axios.put(`/api/inventory/${data.itemId}`, data);
-          setInventory((prev) =>
-            prev.map((item) => (item.itemId === data.itemId ? data : item))
-          );
+          setInventory(prev => prev.map(item => (item.itemId === data.itemId ? data : item)));
         } else {
-          // Add new item
           const response = await axios.post('/api/inventory', data);
-          setInventory((prev) => [...prev, response.data]);
+          setInventory(prev => [...prev, response.data]);
         }
       } else if (activeTab === 'fleet') {
-        if (data.vehicleId) {
-          await axios.put(`/api/vehicle/${data.vehicleId}`, data);
-          setFleet((prev) =>
-            prev.map((item) => (item.vehicleId === data.vehicleId ? data : item))
-          );
+        if (!data.vehicleId) data.vehicleId = getNextId(fleet, 'vehicleId');
+        if (data.vehicleId && fleet.some(v => v.vehicleId === data.vehicleId)) {
+          await axios.put(`/api/vehicles/${data.vehicleId}`, data);
+          setFleet(prev => prev.map(item => (item.vehicleId === data.vehicleId ? data : item)));
         } else {
-          const response = await axios.post('/api/vehicle', data);
-          setFleet((prev) => [...prev, response.data]);
+          const response = await axios.post('/api/vehicles', data);
+          setFleet(prev => [...prev, response.data]);
         }
       } else if (activeTab === 'storage') {
-        if (data.warehouseId) {
-          await axios.put(`/api/warehouse/${data.warehouseId}`, data);
-          setStorage((prev) =>
-            prev.map((item) => (item.warehouseId === data.warehouseId ? data : item))
-          );
+        if (!data.id) data.id = getNextId(storage, 'id');
+        if (data.id && storage.some(w => w.id === data.id)) {
+          await axios.put(`/api/warehouses/${data.id}`, data);
+          setStorage(prev => prev.map(item => (item.id === data.id ? data : item)));
         } else {
-          const response = await axios.post('/api/warehouse', data);
-          setStorage((prev) => [...prev, response.data]);
+          const response = await axios.post('/api/warehouses', data);
+          setStorage(prev => [...prev, response.data]);
         }
       }
+
       setIsEditOpen(false);
-    } catch (err) {
+    } catch {
       setError('Failed to save data.');
     }
   };
@@ -96,44 +100,50 @@ const CompanyDashboard = () => {
     setIsEditOpen(true);
   };
 
-  const renderTable = (data, fields) => {
-    return (
-      <table className="table">
-        <thead>
-          <tr>
-            {fields.map((f, idx) => (
-              <th key={idx}>{f}</th>
-            ))}
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {data.map((row, i) => (
-            <tr key={i}>
-              {fields.map((f, idx) => (
-                <td key={idx}>{row[f.toLowerCase()]}</td>
-              ))}
-              <td>
-                <button className="btn btn-primary" onClick={() => handleEdit(row, i)}>
-                  Edit
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+  // Filter data by search
+  const getFilteredData = () => {
+    const query = searchQuery.toLowerCase();
+    const data = activeTab === 'inventory' ? inventory :
+                 activeTab === 'fleet' ? fleet :
+                 storage;
+
+    if (!query) return data;
+
+    return data.filter(item => 
+      Object.values(item).some(val => String(val).toLowerCase().includes(query))
     );
   };
 
+  const renderTable = (data, fields) => (
+    <table className="table">
+      <thead>
+        <tr>
+          {fields.map((f, idx) => <th key={idx}>{f}</th>)}
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {data.map((row, i) => (
+          <tr key={i}>
+            {fields.map((f, idx) => <td key={idx}>{row[f.toLowerCase()]}</td>)}
+            <td>
+              <button className="btn btn-primary" onClick={() => handleEdit(row, i)}>Edit</button>
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+
   return (
     <section className="section">
-      <h2>Company dashboard</h2>
+      <h2>Company Dashboard</h2>
       <p className="muted">
         Connect a Google Sheet or use the in-app table to track inventory, fleet, and storage.
       </p>
 
       <div className="tabs">
-        {['inventory', 'fleet', 'storage'].map((tab) => (
+        {['inventory', 'fleet', 'storage'].map(tab => (
           <button
             key={tab}
             className={`tab ${activeTab === tab ? 'active' : ''}`}
@@ -144,22 +154,30 @@ const CompanyDashboard = () => {
         ))}
       </div>
 
+      {/* Search bar */}
+      <div style={{ margin: '10px 0' }}>
+        <input
+          type="text"
+          placeholder={`Search ${activeTab}...`}
+          value={searchQuery}
+          onChange={e => setSearchQuery(e.target.value)}
+          style={{ padding: '5px', width: '250px' }}
+        />
+      </div>
+
       <div className="actions">
         <button className="btn btn-primary" onClick={() => { setEditData(null); setIsEditOpen(true); }}>
-          Add {activeTab === 'inventory' ? 'Item' : activeTab === 'fleet' ? 'Vehicle' : 'Allocation'}
+          Add {activeTab === 'inventory' ? 'Item' : activeTab === 'fleet' ? 'Vehicle' : 'Warehouse'}
         </button>
       </div>
 
-      {/* Loading and Error messages */}
       {loading && <p>Loading...</p>}
       {error && <p style={{ color: 'red' }}>{error}</p>}
 
-      {/* Tables */}
-      {activeTab === 'inventory' && renderTable(inventory, ['Item', 'Description', 'Quantity'])}
-      {activeTab === 'fleet' && renderTable(fleet, ['Type', 'Id', 'Status'])}
-      {activeTab === 'storage' && renderTable(storage, ['Facility', 'Capacity', 'Used'])}
+      {activeTab === 'inventory' && renderTable(getFilteredData(), ['Item', 'Description', 'Quantity'])}
+      {activeTab === 'fleet' && renderTable(getFilteredData(), ['Type', 'Id', 'Status'])}
+      {activeTab === 'storage' && renderTable(getFilteredData(), ['Id', 'Type', 'Name', 'City', 'State'])}
 
-      {/* Edit Modal */}
       <EditPage
         isOpen={isEditOpen}
         onClose={() => setIsEditOpen(false)}

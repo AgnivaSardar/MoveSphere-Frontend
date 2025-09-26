@@ -1,72 +1,81 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
 import '../styles/style.css';
 
+// Badge component for conditional or required
+const Badge = ({ kind, children }) => (
+  <span className={`cmp-badge ${kind === 'required' ? 'required' : 'conditional'}`}>
+    {children}
+  </span>
+);
+
+// New Badge style for city (blue box)
+const CityBadge = ({ city }) => (
+  <span className="city-badge">{city}</span>
+);
+
 const Compliance = () => {
-  const [category, setCategory] = useState('export');
+  const [category, setCategory] = useState('');
   const [city, setCity] = useState('');
-  const [results, setResults] = useState([]);
+  const [records, setRecords] = useState([]);
+  const [steps, setSteps] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [postMessage, setPostMessage] = useState('');
+  const [info, setInfo] = useState('');
 
-  // GET request
-  const loadComplianceSteps = async () => {
+  useEffect(() => {
+    loadComplianceRecords();
+  }, []);
+
+  const loadComplianceRecords = async () => {
     setLoading(true);
     setError('');
-    setResults([]);
-    setPostMessage('');
+    setInfo('');
+
     try {
-      const response = await axios.get('/api/compliance', {
-        params: { category, city },
-      });
-      if (response.data && response.data.steps) {
-        setResults(response.data.steps);
+      const params = {};
+      if (category && category.trim() !== '') params.category = category.trim();
+      if (city && city.trim() !== '') params.city = city.trim();
+
+      const response = await axios.get('/api/compliance', { params });
+      const data = response.data;
+
+      if (Array.isArray(data) && data.length > 0) {
+        setRecords(data);
       } else {
-        setResults(['No compliance steps found.']);
+        setInfo('No compliance records found for selected filters.');
+        setRecords([]);
       }
     } catch (err) {
-      console.error(err);
-      setError('Failed to load compliance steps. Try again later.');
+      console.error('Failed to load compliance records:', err);
+      setError('Failed to load compliance records from server.');
+      setRecords([]);
     } finally {
       setLoading(false);
     }
   };
 
-  // POST request
-  const submitCompliance = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setError('');
-    setPostMessage('');
-    try {
-      const response = await axios.post('/api/compliance', { category, city });
-      if (response.data && response.data.message) {
-        setPostMessage(response.data.message);
-      } else {
-        setPostMessage('Submitted successfully!');
-      }
-    } catch (err) {
-      console.error(err);
-      setError('Failed to submit compliance data. Try again later.');
-    } finally {
-      setLoading(false);
-    }
+  // Parse steps string into array for display
+  const parseSteps = (stepsString) => {
+    if (typeof stepsString !== 'string') return [];
+    const stepsArray = stepsString.split(/\d+\.\s*/).filter(Boolean);
+    return stepsArray.map((desc, i) => desc.trim());
   };
 
   return (
     <section className="section">
-      <h2>Compliance guidance</h2>
-      <p className="muted">
-        Pick a category to see step-by-step docs, portals, and nearest offices.
-      </p>
+      <h2>Compliance Management</h2>
+      <p className="muted">Navigate regulatory requirements with step-by-step guidance and official links.</p>
 
-      <form className="filters" onSubmit={submitCompliance}>
-        <select
-          id="complianceCategory"
-          value={category}
-          onChange={(e) => setCategory(e.target.value)}
-        >
+      <form
+        className="filters"
+        onSubmit={(e) => {
+          e.preventDefault();
+          loadComplianceRecords();
+        }}
+      >
+        <select value={category} onChange={(e) => setCategory(e.target.value)}>
+          <option value="">All Categories</option>
           <option value="export">Export logistics</option>
           <option value="road">Road transport (RTO/trucking)</option>
           <option value="aviation">Aviation cargo</option>
@@ -75,32 +84,35 @@ const Compliance = () => {
         </select>
 
         <input
-          id="cityInput"
           placeholder="City or PIN (optional)"
           value={city}
           onChange={(e) => setCity(e.target.value)}
         />
 
-        <button className="btn btn-primary" id="loadCompliance" type="button" onClick={loadComplianceSteps}>
-          {loading ? 'Loading...' : 'Load steps'}
-        </button>
-        <button className="btn btn-secondary" type="submit" disabled={loading}>
-          Submit Compliance
+        <button className="btn btn-primary" disabled={loading}>
+          {loading ? 'Loading…' : 'Load steps'}
         </button>
       </form>
 
-      <div id="complianceResults" className="list">
-        {error && <p style={{ color: 'red' }}>{error}</p>}
-        {postMessage && <p style={{ color: 'green' }}>{postMessage}</p>}
-        {results.length > 0 && !error ? (
-          <ul>
-            {results.map((step, idx) => (
-              <li key={idx}>{step}</li>
-            ))}
-          </ul>
-        ) : !loading && !error && !postMessage ? (
-          <p>No compliance steps loaded yet.</p>
-        ) : null}
+      {error && <div className="alert warn">{error}</div>}
+      {info && <div className="alert success">{info}</div>}
+
+      <h3 className="cmp-subtitle">Compliance Records</h3>
+
+      <div className="cmp-list">
+        {records.map((record) => (
+          <div className="cmp-card record" key={record.id} style={{marginBottom: '20px'}}>
+            <h4>{record.category}</h4>
+            <CityBadge city={record.city} />
+            <div className="step-desc">
+              <ol>
+                {parseSteps(record.steps).map((step, idx) => (
+                  <li key={idx}>{step}</li>
+                ))}
+              </ol>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );

@@ -9,14 +9,34 @@ const Login = () => {
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  // Simple client-side validation function
+  const validateForm = () => {
+    if (!email) {
+      setError('Email is required');
+      return false;
+    }
+    if (!/\S+@\S+\.\S+/.test(email)) {
+      setError('Email is invalid');
+      return false;
+    }
+    if (!password) {
+      setError('Password is required');
+      return false;
+    }
+    setError('');
+    return true;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
+
+    if (!validateForm()) return;
+
     try {
       const response = await axios.post('/api/auth/login', { email, password });
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
-        navigate('/dashboard');  // Redirect to dashboard
+        navigate('/dashboard'); // Redirect to dashboard after successful login
       } else {
         setError('Invalid login response');
       }
@@ -26,30 +46,38 @@ const Login = () => {
   };
 
   return (
-    <section className="auth-form">
+    <section className="auth-form" aria-label="Login form">
       <h2>Login</h2>
       <form onSubmit={handleSubmit} noValidate>
         <input
           type="email"
           placeholder="Email"
-          required
+          aria-label="Email address"
+          aria-required="true"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          required
         />
         <input
           type="password"
           placeholder="Password"
-          required
+          aria-label="Password"
+          aria-required="true"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          required
         />
         <button type="submit" className="btn btn-primary" id="loginBtn">
           Login
         </button>
       </form>
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      {error && (
+        <p role="alert" style={{ color: 'red' }}>
+          {error}
+        </p>
+      )}
       <p>
-        Don't have an account? <Link to="/signup">Sign Up</Link>
+        Don&apos;t have an account? <Link to="/signup">Sign Up</Link>
       </p>
     </section>
   );

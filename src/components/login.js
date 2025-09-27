@@ -3,6 +3,11 @@ import axios from 'axios';
 import '../styles/style.css';
 import { Link, useNavigate } from 'react-router-dom';
 
+// Create axios instance with base URL from environment variable
+const API = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE_URL || '',
+});
+
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,7 +38,7 @@ const Login = () => {
     if (!validateForm()) return;
 
     try {
-      const response = await axios.post('/api/auth/login', { email, password });
+      const response = await API.post('/api/auth/login', { email, password });
       if (response.data.token) {
         localStorage.setItem('token', response.data.token);
         navigate('/dashboard'); // Redirect to dashboard after successful login

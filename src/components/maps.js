@@ -3,14 +3,19 @@ import { GoogleMap, LoadScript, Marker } from '@react-google-maps/api';
 import axios from 'axios';
 import '../styles/style.css';
 
+// Axios instance with backend base URL from environment variable
+const API = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE_URL || '',
+});
+
+const INDIA_CENTER = { lat: 20.5937, lng: 78.9629 };
+
 const Maps = () => {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState([]);
-  const [mapCenter, setMapCenter] = useState({ lat: 20.5937, lng: 78.9629 }); // India center
+  const [mapCenter, setMapCenter] = useState(INDIA_CENTER);
   const [zoom, setZoom] = useState(5);
   const [activeMarker, setActiveMarker] = useState(null);
-
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
   useEffect(() => {
     fetchLocations(''); // Load all locations initially
@@ -18,7 +23,7 @@ const Maps = () => {
 
   const fetchLocations = async (search) => {
     try {
-      const response = await axios.get(`${API_BASE_URL}/api/maps`, {
+      const response = await API.get('/api/maps', {
         params: { q: search || '' },
       });
 
@@ -31,15 +36,17 @@ const Maps = () => {
         setActiveMarker(data[0].id);
         setTimeout(() => setActiveMarker(null), 3000);
       } else {
-        // No data: fallback center, no details
-        setMapCenter({ lat: 20.5937, lng: 78.9629 });
+        // No data: fallback center, zoom out
+        setMapCenter(INDIA_CENTER);
         setZoom(5);
+        setActiveMarker(null);
       }
     } catch (error) {
       console.error('Failed to load map locations', error.response || error.message);
       setResults([]);
-      setMapCenter({ lat: 20.5937, lng: 78.9629 });
+      setMapCenter(INDIA_CENTER);
       setZoom(5);
+      setActiveMarker(null);
     }
   };
 
@@ -116,9 +123,7 @@ const Maps = () => {
                             ? 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
                             : 'http://maps.google.com/mapfiles/ms/icons/red-dot.png',
                       }}
-                      animation={
-                        activeMarker === loc.id ? window.google.maps.Animation.BOUNCE : null
-                      }
+                      animation={activeMarker === loc.id ? window.google.maps.Animation.BOUNCE : null}
                     />
                   ) : null
                 )}

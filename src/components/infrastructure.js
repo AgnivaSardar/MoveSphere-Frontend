@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../styles/style.css';
 
+// Create axios instance with base URL from environment variable
+const API = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE_URL || '',
+});
+
 const Infrastructure = () => {
   const [city, setCity] = useState('');
   const [type, setType] = useState('any'); // 'any' means no filter for type
@@ -25,7 +30,7 @@ const Infrastructure = () => {
         params.ownership = filters.ownership;
       }
 
-      const response = await axios.get('/api/infrastructure', { params });
+      const response = await API.get('/api/infrastructure', { params });
       setResults(response.data);
     } catch (err) {
       setError('Failed to load infrastructure data.');

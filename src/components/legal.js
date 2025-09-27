@@ -3,6 +3,11 @@ import axios from 'axios';
 import EditPage from './Edit';
 import '../styles/style.css';
 
+// Axios instance configured with backend base URL from environment variable
+const API = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE_URL || '',
+});
+
 const LegalSupport = () => {
   const [city, setCity] = useState('');
   const [caseType, setCaseType] = useState('');
@@ -19,15 +24,16 @@ const LegalSupport = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await axios.get('/api/legal-support', {
+      const response = await API.get('/api/legal-support', {
         params: {
           city: city.trim(),
-          caseType: caseType.trim(), // caseType matches dataset now
+          caseType: caseType.trim(),
         },
       });
       setResults(response.data);
     } catch (err) {
       setError('Failed to load legal support data');
+      console.error(err);
     } finally {
       setLoading(false);
     }
@@ -52,9 +58,9 @@ const LegalSupport = () => {
   const handleSave = async (data) => {
     try {
       if (data.id) {
-        await axios.put(`/api/legal-support/${data.id}`, data);
+        await API.put(`/api/legal-support/${data.id}`, data);
       } else {
-        await axios.post('/api/legal-support', data);
+        await API.post('/api/legal-support', data);
       }
       await fetchData();
       setIsEditOpen(false);
@@ -67,7 +73,7 @@ const LegalSupport = () => {
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this item?')) return;
     try {
-      await axios.delete(`/api/legal-support/${id}`);
+      await API.delete(`/api/legal-support/${id}`);
       setResults(results.filter(item => item.id !== id));
     } catch {
       setError('Failed to delete legal support data');

@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import '../styles/style.css';
 
+// Create axios instance with base URL from environment variable
+const API = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000',
+});
+
 const SignUp = () => {
   const [step, setStep] = useState(1);
   const [fullName, setFullName] = useState('');
@@ -22,8 +27,6 @@ const SignUp = () => {
 
   const isStrongPassword = Object.values(criteria).every(Boolean);
 
-  const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || 'http://localhost:5000';
-
   const handleSignup = async (e) => {
     e.preventDefault();
     setError('');
@@ -39,8 +42,7 @@ const SignUp = () => {
 
     setLoading(true);
     try {
-      // Notice no /api prefix here because API_BASE_URL excludes it
-      await axios.post(`${API_BASE_URL}/api/auth/send-otp`, { email, phone });
+      await API.post('/api/auth/send-otp', { email, phone });
       setStep(2);
     } catch {
       setError('Failed to send OTP');
@@ -54,7 +56,7 @@ const SignUp = () => {
     setError('');
     setLoading(true);
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/auth/verify-otp`, {
+      const res = await API.post('/api/auth/verify-otp', {
         email,
         phone,
         otp,

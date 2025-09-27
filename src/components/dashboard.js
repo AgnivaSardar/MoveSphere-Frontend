@@ -3,7 +3,7 @@ import axios from 'axios';
 import '../styles/style.css';
 import EditPage from './Edit';
 
-// Create axios instance with base URL from environment
+// Create axios instance with base URL from environment variable
 const API = axios.create({
   baseURL: process.env.REACT_APP_API_BASE || '',
 });

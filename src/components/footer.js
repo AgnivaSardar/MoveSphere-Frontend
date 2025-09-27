@@ -36,8 +36,8 @@ const Footer = () => {
         <div className="footer-section contact">
           <h4>Contact Us</h4>
           <p>Email: <a href="mailto:support@movesphere.com">support@movesphere.com</a></p>
-          <p>Phone: <a href="tel:+911234567890">+91 12345 67890</a></p>
-          <p>Address: 123 Harbor Road, Logistics City, India</p>
+          <p>Phone: <a href="tel:+911234567890">+91 62901 66815</a></p>
+          <p>Address: D2 Block - 513, VIT Chennai</p>
         </div>
 
         {/* Social Media */}

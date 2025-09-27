@@ -5,7 +5,7 @@ import '../styles/style.css';
 
 
 // Axios instance (set VITE_API_BASE or REACT_APP_API_BASE if needed)
-const API = axios.create({ baseURL: import.meta?.env?.VITE_API_BASE || process.env.REACT_APP_API_BASE || '' });
+const API = axios.create({ baseURL: import.meta?.env?.VITE_API_BASE || process.env.REACT_APP_API_BASE_URL || '' });
 
 /* =======================
    Sample data fallback

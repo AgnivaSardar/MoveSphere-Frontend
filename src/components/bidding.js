@@ -2,9 +2,6 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import '../styles/style.css';
 
-import API from '../api';
-
-API.get('/api/bidding');
 
 
 // Axios instance (set VITE_API_BASE or REACT_APP_API_BASE if needed)

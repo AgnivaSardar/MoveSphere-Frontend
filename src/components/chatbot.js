@@ -1,9 +1,6 @@
 import React from 'react';
 import '../styles/style.css';
 
-import API from '../api';
-
-API.get('/api/chatbot');
 
 
 const AIChatbot = () => {

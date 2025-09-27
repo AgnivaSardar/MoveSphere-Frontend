@@ -2,10 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../styles/style.css';
 
-import API from '../api';
-
-API.get('/api/compliance');
-
 
 // Badge component for conditional or required
 const Badge = ({ kind, children }) => (

@@ -2,6 +2,11 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../styles/style.css';
 
+import API from '../api';
+
+API.get('/api/compliance');
+
+
 // Badge component for conditional or required
 const Badge = ({ kind, children }) => (
   <span className={`cmp-badge ${kind === 'required' ? 'required' : 'conditional'}`}>
@@ -15,9 +20,9 @@ const CityBadge = ({ city }) => (
 );
 
 // Create axios instance with base URL from env var
-const API = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE_URL || '',
-});
+// const API = axios.create({
+//   baseURL: process.env.REACT_APP_API_BASE_URL || '',
+// });
 
 const Compliance = () => {
   const [category, setCategory] = useState('');

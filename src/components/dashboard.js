@@ -3,6 +3,11 @@ import axios from 'axios';
 import '../styles/style.css';
 import EditPage from './Edit';
 
+// Create axios instance with base URL from environment
+const API = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE || '',
+});
+
 const CompanyDashboard = () => {
   const [activeTab, setActiveTab] = useState('inventory');
   const [searchQuery, setSearchQuery] = useState(''); // Search state
@@ -25,13 +30,13 @@ const CompanyDashboard = () => {
     try {
       let response;
       if (tab === 'inventory') {
-        response = await axios.get('/api/inventory');
+        response = await API.get('/api/inventory');
         setInventory(response.data);
       } else if (tab === 'fleet') {
-        response = await axios.get('/api/vehicles');
+        response = await API.get('/api/vehicles');
         setFleet(response.data);
       } else if (tab === 'storage') {
-        response = await axios.get('/api/warehouses');
+        response = await API.get('/api/warehouses');
         setStorage(response.data);
       }
     } catch (err) {
@@ -46,6 +51,7 @@ const CompanyDashboard = () => {
     setSearchQuery(''); // reset search on tab change
   }, [activeTab]);
 
+  // Tab click handler
   const handleTabClick = (tab) => {
     setActiveTab(tab);
   };
@@ -63,28 +69,28 @@ const CompanyDashboard = () => {
       if (activeTab === 'inventory') {
         if (!data.itemId) data.itemId = getNextId(inventory, 'itemId'); // auto-increment
         if (data.itemId && inventory.some(i => i.itemId === data.itemId)) {
-          await axios.put(`/api/inventory/${data.itemId}`, data);
+          await API.put(`/api/inventory/${data.itemId}`, data);
           setInventory(prev => prev.map(item => (item.itemId === data.itemId ? data : item)));
         } else {
-          const response = await axios.post('/api/inventory', data);
+          const response = await API.post('/api/inventory', data);
           setInventory(prev => [...prev, response.data]);
         }
       } else if (activeTab === 'fleet') {
         if (!data.vehicleId) data.vehicleId = getNextId(fleet, 'vehicleId');
         if (data.vehicleId && fleet.some(v => v.vehicleId === data.vehicleId)) {
-          await axios.put(`/api/vehicles/${data.vehicleId}`, data);
+          await API.put(`/api/vehicles/${data.vehicleId}`, data);
           setFleet(prev => prev.map(item => (item.vehicleId === data.vehicleId ? data : item)));
         } else {
-          const response = await axios.post('/api/vehicles', data);
+          const response = await API.post('/api/vehicles', data);
           setFleet(prev => [...prev, response.data]);
         }
       } else if (activeTab === 'storage') {
         if (!data.id) data.id = getNextId(storage, 'id');
         if (data.id && storage.some(w => w.id === data.id)) {
-          await axios.put(`/api/warehouses/${data.id}`, data);
+          await API.put(`/api/warehouses/${data.id}`, data);
           setStorage(prev => prev.map(item => (item.id === data.id ? data : item)));
         } else {
-          const response = await axios.post('/api/warehouses', data);
+          const response = await API.post('/api/warehouses', data);
           setStorage(prev => [...prev, response.data]);
         }
       }
@@ -95,6 +101,7 @@ const CompanyDashboard = () => {
     }
   };
 
+  // Edit button handler
   const handleEdit = (item, index) => {
     setEditData({ ...item, index });
     setIsEditOpen(true);
@@ -109,11 +116,12 @@ const CompanyDashboard = () => {
 
     if (!query) return data;
 
-    return data.filter(item => 
+    return data.filter(item =>
       Object.values(item).some(val => String(val).toLowerCase().includes(query))
     );
   };
 
+  // Render data table
   const renderTable = (data, fields) => (
     <table className="table">
       <thead>

@@ -1,6 +1,11 @@
 import React from 'react';
 import '../styles/style.css';
 
+import API from '../api';
+
+API.get('/api/chatbot');
+
+
 const AIChatbot = () => {
   const BOTPRESS_URL =
     "https://cdn.botpress.cloud/webchat/v3.3/shareable.html?configUrl=https://files.bpcontent.cloud/2025/09/25/05/20250925051406-5RQPS68F.json";

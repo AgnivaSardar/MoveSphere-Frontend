@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import '../styles/style.css';
 
@@ -13,6 +13,11 @@ const Badge = ({ kind, children }) => (
 const CityBadge = ({ city }) => (
   <span className="city-badge">{city}</span>
 );
+
+// Create axios instance with base URL from env var
+const API = axios.create({
+  baseURL: process.env.REACT_APP_API_BASE_URL || '',
+});
 
 const Compliance = () => {
   const [category, setCategory] = useState('');
@@ -37,7 +42,7 @@ const Compliance = () => {
       if (category && category.trim() !== '') params.category = category.trim();
       if (city && city.trim() !== '') params.city = city.trim();
 
-      const response = await axios.get('/api/compliance', { params });
+      const response = await API.get('/api/compliance', { params });
       const data = response.data;
 
       if (Array.isArray(data) && data.length > 0) {
@@ -59,7 +64,7 @@ const Compliance = () => {
   const parseSteps = (stepsString) => {
     if (typeof stepsString !== 'string') return [];
     const stepsArray = stepsString.split(/\d+\.\s*/).filter(Boolean);
-    return stepsArray.map((desc, i) => desc.trim());
+    return stepsArray.map((desc) => desc.trim());
   };
 
   return (
@@ -101,7 +106,7 @@ const Compliance = () => {
 
       <div className="cmp-list">
         {records.map((record) => (
-          <div className="cmp-card record" key={record.id} style={{marginBottom: '20px'}}>
+          <div className="cmp-card record" key={record.id} style={{ marginBottom: '20px' }}>
             <h4>{record.category}</h4>
             <CityBadge city={record.city} />
             <div className="step-desc">

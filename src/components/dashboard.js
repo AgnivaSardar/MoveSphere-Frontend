@@ -5,7 +5,7 @@ import EditPage from './Edit';
 
 // Create axios instance with base URL from environment variable
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_BASE || '',
+  baseURL: process.env.REACT_APP_API_BASE_URL || '',
 });
 
 const CompanyDashboard = () => {
